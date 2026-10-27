@@ -1,0 +1,299 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Гайд 18: Поздравление нейросетью</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Слой: блокнот, как gajd-1. Гайд 18 = орхидея. Собрано make-gajdy.cjs из src/gajd-18.txt */
+:root{
+  color-scheme: light;
+  --bg:#FBF7F0; --panel:#FFFDF9; --ink:#1E1A16; --muted:#6B5E52; --line:#EADFCF;
+  --accent:#E3C1EA; --soft:#F8EDFA; --strong:#84408F; --g1:#F0DAF4; --g2:#E6C9EC; --edge:#EBD5EF; --sh:#B98AC1;
+  --prompt-bg:#3A2A20; --prompt-ink:#FBEFE3; --ok:#5E7A3A; --ok-soft:#EEF2E3;
+  --f-display:"Rubik","Segoe UI",Arial,sans-serif;
+  --f-body:"PT Serif",Georgia,"Times New Roman",serif;
+  --f-mono:"JetBrains Mono",Consolas,ui-monospace,monospace;
+  --shadow:0 1px 2px rgba(80,55,30,.06),0 8px 22px rgba(80,55,30,.07);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{background:var(--bg);color:var(--ink);font:400 19px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+a{color:var(--strong)}
+:focus-visible{outline:3px solid var(--strong);outline-offset:3px;border-radius:4px}
+
+/* шапка */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top-in{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{font:700 18px/1.2 var(--f-display);color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:10px}
+.brand i{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--soft)}
+.crumbs{font:500 14px/1.3 var(--f-display);color:var(--muted);text-align:right}
+.crumbs b{color:var(--strong);font-weight:500}
+
+/* раскладка */
+.wrap{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:240px minmax(0,1fr);gap:56px;
+  padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.toc{position:sticky;top:96px;align-self:start;border-right:1px solid var(--line);padding-right:20px;max-height:calc(100vh - 120px);overflow:auto}
+.toc h4,.mtoc summary{font:600 12px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.toc a{display:block;padding:7px 0 7px 14px;border-left:2px solid transparent;font:500 15px/1.35 var(--f-display);color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--ink)}
+.toc a.on{color:var(--strong);border-left-color:var(--strong)}
+.mtoc{display:none}
+article{min-width:0;max-width:700px}
+
+/* обложка */
+.eyebrow{font:600 13px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--strong);margin:0 0 16px}
+.cover{position:relative;overflow:hidden;border-radius:22px;background:
+  radial-gradient(120% 90% at 100% 0%,var(--g1) 0%,transparent 55%),
+  radial-gradient(90% 80% at 0% 100%,var(--g2) 0%,transparent 60%),var(--accent);
+  padding:34px 32px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:24px;align-items:center;box-shadow:var(--shadow)}
+.cover .tag{display:inline-block;font:600 12px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;background:rgba(255,253,249,.7);color:var(--strong);padding:8px 12px;border-radius:999px}
+.cover>div{min-width:0}
+.cover .big{position:relative;z-index:1;overflow-wrap:break-word;font:800 clamp(34px,4vw,46px)/1 var(--f-display);margin:18px 0 12px;letter-spacing:-.02em;color:var(--ink)}
+.cover .big span{color:var(--strong)}
+.cover .sub{font:italic 400 20px/1.35 var(--f-body);margin:0;color:#3A2F27}
+.pair{display:grid;gap:12px}
+.note{background:var(--panel);border-radius:14px;padding:14px 16px;box-shadow:0 4px 14px rgba(80,55,30,.12);font:400 14px/1.45 var(--f-body)}
+.note small{display:block;font:600 11px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;color:var(--muted)}
+.note.was{transform:rotate(-2deg);opacity:.85}
+.note.now{transform:rotate(1.2deg)}
+.note.now small{color:var(--ok)}
+
+h1{font:800 clamp(30px,4.6vw,44px)/1.1 var(--f-display);letter-spacing:-.015em;margin:26px 0 12px;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 16px;font:500 14px/1 var(--f-display);color:var(--muted)}
+.lvl{background:var(--ok-soft);color:var(--ok);padding:7px 12px;border-radius:999px}
+.lead{font-size:20px;line-height:1.5;margin:0 0 10px}
+
+/* короткий маршрут */
+.route{background:var(--soft);border:1px solid var(--edge);border-radius:16px;padding:16px 20px;margin:20px 0}
+.route h2{font:700 18px/1.3 var(--f-display);margin:0 0 8px;padding:0;border:0}
+.route ol{margin:0;padding-left:22px;display:grid;gap:2px;font-size:17px}
+
+/* разделы */
+section{padding-top:0}
+h2{font:700 clamp(24px,3.4vw,30px)/1.2 var(--f-display);margin:34px 0 10px;text-wrap:balance;letter-spacing:-.01em}
+h3{font:700 20px/1.3 var(--f-display);margin:20px 0 6px;display:flex;gap:12px;align-items:baseline}
+h3 .n{flex:none;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--ink);font:700 15px/1 var(--f-display)}
+p{margin:0 0 10px}
+ul.dots,ol.steps{margin:0 0 12px;padding-left:22px;display:grid;gap:4px}
+.swap{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:6px}
+.swap li{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1.4fr);gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:17px;line-height:1.4}
+.swap s{color:var(--muted);text-decoration-color:rgba(120,80,50,.5)}
+.swap .arr{color:var(--strong);font-family:var(--f-display);font-weight:700}
+
+/* промт с кнопкой */
+.prompt{position:relative;background:var(--prompt-bg);color:var(--prompt-ink);border-radius:16px;padding:18px 20px;margin:10px 0 12px;box-shadow:var(--shadow)}
+.prompt pre{margin:0;white-space:pre-wrap;word-break:break-word;font:400 15px/1.5 var(--f-mono)}
+.prompt .lbl{font:600 11px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:#D9B89B;margin:0 0 12px;padding-right:130px}
+.copy{position:absolute;top:14px;right:14px;border:0;cursor:pointer;background:var(--accent);color:var(--ink);font:700 14px/1 var(--f-display);padding:11px 16px;border-radius:999px;box-shadow:0 3px 0 var(--sh)}
+.copy:active{transform:translateY(2px);box-shadow:0 1px 0 var(--sh)}
+.copy.done{background:#CFE0B0}
+
+/* было и стало */
+.case{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin:12px 0;box-shadow:var(--shadow)}
+.case h3{margin:0 0 8px}
+.case .was{display:flex;gap:10px;align-items:baseline;font-size:17px;color:var(--muted);margin:0 0 4px}
+.case>p:last-child{margin:10px 0 0}
+.chip{flex:none;font:600 11px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;padding:6px 9px;border-radius:999px}
+.chip.w{background:#F1E6DA;color:var(--muted)}
+.chip.n{background:var(--ok-soft);color:var(--ok)}
+.case .prompt{margin-bottom:0}
+
+/* проверка */
+.check{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:6px}
+.check label{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;font-size:17px;line-height:1.4}
+.check input{width:20px;height:20px;margin-top:4px;accent-color:var(--ok);flex:none}
+.check strong{font-family:var(--f-display);font-weight:700}
+.check em{color:var(--muted)}
+.fact{background:var(--panel);border:1.5px dashed var(--sh);border-radius:14px;padding:14px 18px;margin:6px 0 18px;font:italic 400 16px/1.55 var(--f-body);color:#4A3E34}
+.fact b{display:block;font:600 11px/1 var(--f-mono);font-style:normal;letter-spacing:.14em;text-transform:uppercase;color:var(--strong);margin-bottom:8px}
+.gbtn{display:inline-flex;align-items:center;gap:8px;margin:0 0 18px;background:var(--b);border:1px solid var(--bb);color:var(--bi);text-decoration:none;font:700 16px/1.2 var(--f-display);padding:12px 18px;border-radius:999px}
+.gbtn:hover{filter:brightness(.97)}
+.warn{border-left:4px solid var(--strong);background:var(--soft);padding:16px 18px;border-radius:0 12px 12px 0;margin:0 0 16px}
+
+/* финал */
+.cta{margin:36px 0 18px;background:var(--prompt-bg);color:var(--prompt-ink);border-radius:22px;padding:30px 28px;display:grid;gap:16px}
+.cta p{margin:0;font-size:19px}
+.btn{justify-self:start;display:inline-block;background:var(--accent);color:var(--ink);text-decoration:none;font:700 17px/1 var(--f-display);padding:16px 22px;border-radius:999px;box-shadow:0 4px 0 var(--sh)}
+.next{display:grid;gap:6px;text-decoration:none;color:var(--ink);background:var(--b);border:1px solid var(--bb);border-radius:18px;padding:22px 24px}
+.next small{font:600 12px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--bi)}
+.next b{font:700 21px/1.3 var(--f-display)}
+.next:hover b{text-decoration:underline}
+
+@media (max-width:1000px){
+  .cover{grid-template-columns:minmax(0,1fr)}
+  .pair{max-width:460px}
+}
+@media (max-width:900px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:0;padding-block:18px 56px}
+  .toc{display:none}
+  .mtoc{display:block;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 22px}
+  .mtoc summary{margin:0;cursor:pointer}
+  .mtoc ol{margin:12px 0 0;padding-left:20px;display:grid;gap:6px;font:500 16px/1.35 var(--f-display)}
+  .mtoc a{color:var(--ink);text-decoration:none}
+  .crumbs{display:none}
+}
+@media (max-width:620px){
+  body{font-size:17px}
+  .lead{font-size:18px}
+  .cover{grid-template-columns:minmax(0,1fr);padding:26px 20px}
+  .swap li{grid-template-columns:minmax(0,1fr);gap:2px}
+  .swap .arr{display:none}
+  .prompt{padding:18px 16px}
+  .prompt .lbl{padding-right:0;margin-bottom:52px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.note{transform:none!important}}
+
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#top"><i></i>Ольга Кайдалова</a>
+    <div class="crumbs">Гайды для новичков · <b>Поздравление нейросетью</b></div>
+  </div>
+</header>
+
+<div class="wrap" id="top">
+  <nav class="toc" aria-label="Содержание">
+    <h4>Содержание</h4>
+    <ol id="toc">
+      <li><a href="#s-intro">Что внутри</a></li>
+      <li><a href="#s-1">Пять строк до первого запроса</a></li>
+      <li><a href="#s-2">Три задания под разные случаи</a></li>
+      <li><a href="#s-3">Что дописать под повод</a></li>
+      <li><a href="#s-4">Перед отправкой</a></li>
+      <li><a href="#s-5">Открытка к поздравлению</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <details class="mtoc"><summary>Содержание</summary><ol id="mtoc">
+      <li><a href="#s-1">Пять строк до первого запроса</a></li>
+      <li><a href="#s-2">Три задания под разные случаи</a></li>
+      <li><a href="#s-3">Что дописать под повод</a></li>
+      <li><a href="#s-4">Перед отправкой</a></li>
+      <li><a href="#s-5">Открытка к поздравлению</a></li>
+    </ol></details>
+
+    <p class="eyebrow">Гайды · 18 из 25</p>
+
+    <div class="cover" aria-hidden="true">
+      <div>
+        <span class="tag">Для новичка</span>
+        <div class="big">Слова, которые <span>запомнят</span></div>
+        <p class="sub">Личные слова для дня рождения, юбилея и проводов на пенсию с помощью нейросети</p>
+      </div>
+      <div class="pair">
+        <div class="note was"><small>Было</small>Желаю счастья, здоровья, любви и всего самого наилучшего!</div>
+        <div class="note now"><small>Стало</small>Помнишь, как мы в 2009-м перепутали поезд и уехали в Тверь?</div>
+      </div>
+    </div>
+
+    <h1 id="s-intro">Поздравление нейросетью: личное, а не шаблонное</h1>
+    <div class="meta"><span class="lvl">Для новичка</span><span>3 минуты чтения</span></div>
+
+    <p class="lead">Попроси нейросеть «поздравить коллегу с днём рождения», и получишь открытку из киоска: счастья, здоровья, творческих успехов. Такое поздравление слышат и сразу забывают</p>
+    <p>Нейросеть хорошо справляется с формой: ритмом, длиной, тоном. Но содержание приносишь ты. Здесь пять строк, которые нужно выписать до первого запроса, три готовых задания и что дописать под разные поводы</p>
+
+    <div class="route">
+      <h2>Главное за минуту</h2>
+      <ol>
+        <li>До запроса выпиши 5 строк о человеке, одна из них ваша общая история</li>
+        <li>Запрети штампы и выдумки прямо в задании</li>
+        <li>Прочитай готовый текст вслух перед отправкой</li>
+      </ol>
+    </div>
+
+    <section>
+      <h2 id="s-1">Пять строк до первого запроса</h2>
+      <ol class="steps">
+        <li>Кто человек тебе и сколько вы знакомы</li>
+        <li>Одна история, которая была только у вас двоих. Её не возьмёшь ни из одного шаблона</li>
+        <li>Что сейчас главное в его жизни</li>
+        <li>Как он разговаривает: шутит, говорит коротко, любит красивые слова</li>
+        <li>Где прозвучит поздравление: в чате, вслух за столом, в открытке</li>
+      </ol>
+      <p>Выписала, и половина работы сделана. Остальное нейросеть соберёт</p>
+    </section>
+
+    <section>
+      <h2 id="s-2">Три задания под разные случаи</h2>
+      <h3><span class="n">1</span>Короткое тёплое: для чата или подписи к подарку</h3>
+      <div class="prompt"><p class="lbl">Промт</p><pre>Напиши поздравление с днём рождения по пяти строкам ниже. Ровно 3 предложения, тёплый тон, без пафоса. Без «счастья, здоровья, удачи», он их не любит. Не придумывай событий, которых нет в строках, если материала мало, оставь пропуск. [вставь 5 строк]</pre></div>
+      <h3><span class="n">2</span>История: чтобы прочитать вслух</h3>
+      <div class="prompt"><p class="lbl">Промт</p><pre>Напиши поздравление по пяти строкам ниже, чтобы прочитать вслух за минуту, 200-250 слов. Порядок: наша общая история, неожиданный поворот, короткое пожелание в конце. Без списка пожеланий, их никто не запоминает. Не придумывай событий. [вставь 5 строк]</pre></div>
+      <h3><span class="n">3</span>От команды или семьи</h3>
+      <div class="prompt"><p class="lbl">Промт</p><pre>Напиши поздравление от всего отдела по фактам ниже. Только от «мы», слово «я» не используй. 4-5 предложений. Не придумывай событий. [вставь факты]</pre></div>
+      <p>Не понравилось? Допиши правку в том же чате, по одной: «убери восклицательные знаки», «сделай теплее в конце», «замени слово «коллега» на имя»</p>
+    </section>
+
+    <section>
+      <h2 id="s-3">Что дописать под повод</h2>
+      <ul class="dots">
+        <li><strong>День рождения.</strong> Одна общая история обязательно. Пожелание смотрит вперёд, а не перечисляет блага</li>
+        <li><strong>Свадьба.</strong> Обращение к обоим по именам, а не только к невесте. Без шуток про «конец свободы»</li>
+        <li><strong>Рождение ребёнка.</strong> Поздравляешь родителей. Одна шутка про бессонные ночи, без советов по воспитанию</li>
+        <li><strong>Юбилей.</strong> Что человек сделал за эти годы. Без слова «возраст» и без перечисления цифр</li>
+        <li><strong>Проводы на пенсию.</strong> Благодарность за конкретную работу, потом про свободное время. Никаких намёков на старость</li>
+        <li><strong>8 Марта в коллективе.</strong> Одно поздравление на весь отдел, без комплиментов внешности и без «милых дам»</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="s-4">Перед отправкой</h2>
+      <ul class="check">
+        <li><label><input type="checkbox" id="c1"><span><strong>Вслух.</strong> Прочитала вслух, фальшь на слух слышна сразу</span></label></li>
+        <li><label><input type="checkbox" id="c2"><span><strong>Скобки.</strong> Нет пустых мест вроде <em>[Имя]</em> и <em>[дата]</em></span></label></li>
+        <li><label><input type="checkbox" id="c3"><span><strong>Ты и вы.</strong> Обращение одно на весь текст</span></label></li>
+        <li><label><input type="checkbox" id="c4"><span><strong>Факты.</strong> Имена, даты и история такие, как было на самом деле</span></label></li>
+      </ul>
+      <p>Если после нескольких правок текст стал хуже, открой новый чат и вставь удачный вариант первой строкой: «вот черновик, улучши только концовку»</p>
+    </section>
+
+    <section>
+      <h2 id="s-5">Открытка к поздравлению</h2>
+      <p>Картинку к тексту нейросеть тоже нарисует, причём бесплатно. Как сделать открытку с надписью за 5 минут, в двадцатом гайде</p>
+      <a class="gbtn" style="--b:#E6F5F4;--bb:#C8E8E5;--bi:#175651" href="gajd-20.html">Гайд 20. Открытка нейросетью →</a>
+      <aside class="fact"><b>Интересный факт</b>Можно попросить переделать припев известной песни под имя и историю человека. Назови песню и попроси сохранить размер, чтобы слова ложились на мелодию. Потом пропой вслух и поправь строки, где сбивается ритм</aside>
+    </section>
+
+    <div class="cta">
+      <p>Нейросеть пишет форму, а тепло приносишь ты. Больше идей, как пользоваться нейросетями в жизни, и рассказ о том, где я училась, в моём Telegram-канале</p>
+      <a class="btn" href="https://t.me/neiro_ok" target="_blank" rel="noopener">Подписаться в Telegram</a>
+    </div>
+
+    <a class="next" style="--b:#F7F0E3;--bb:#E9DDC6;--bi:#5C431C" href="gajd-19.html">
+      <small>Читать дальше · гайд 19</small>
+      <b>Картинка по описанию →</b>
+    </a>
+  </article>
+</div>
+
+<script>
+(function(){
+  var heads=[].slice.call(document.querySelectorAll('article h1[id], article section > h2[id]'));
+  var toc=document.getElementById('toc'), mtoc=document.getElementById('mtoc');
+  var links=[].slice.call(toc.querySelectorAll('a'));
+  function spy(){
+    var cur=heads[0];
+    heads.forEach(function(h){ if(h.getBoundingClientRect().top<140) cur=h; });
+    links.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href')==='#'+cur.id); });
+  }
+  addEventListener('scroll',spy,{passive:true}); spy();
+  mtoc.addEventListener('click',function(e){ if(e.target.tagName==='A') mtoc.parentNode.open=false; });
+
+  document.querySelectorAll('.prompt').forEach(function(box){
+    var b=document.createElement('button'); b.className='copy'; b.type='button'; b.textContent='Скопировать';
+    box.appendChild(b);
+    b.addEventListener('click',function(){
+      var pre=box.querySelector('pre'), text=pre.textContent;
+      function ok(){ b.textContent='Скопировано'; b.classList.add('done'); setTimeout(function(){ b.textContent='Скопировать'; b.classList.remove('done'); },1800); }
+      function pick(){ var r=document.createRange(); r.selectNodeContents(pre); var s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent='Выделено, скопируй'; }
+      try{ navigator.clipboard.writeText(text).then(ok,pick); }catch(e){ pick(); }
+    });
+  });
+})();
+</script>
